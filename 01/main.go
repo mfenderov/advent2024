@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"container/heap"
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type IntHeap []int
@@ -29,35 +30,59 @@ func (h *IntHeap) Pop() any {
 	return x
 }
 
+type InputData struct {
+	LeftHeap  *IntHeap
+	RightHeap *IntHeap
+	LeftSlice []int
+	RightMap  map[int]int
+}
+
 func main() {
 
-	heap1 := &IntHeap{}
-	heap2 := &IntHeap{}
-	heap.Init(heap1)
-	heap.Init(heap2)
+	inputData, err := readIntoHeaps()
 
-	err := readIntoHeaps(heap1, heap2)
 	if err != nil {
 		panic(err)
 	}
 
 	total := 0
 
-	for heap1.Len() > 0 && heap2.Len() > 0 {
-		num1 := heap.Pop(heap1).(int)
-		num2 := heap.Pop(heap2).(int)
+	leftHeap := inputData.LeftHeap
+	rightHeap := inputData.RightHeap
+	for leftHeap.Len() > 0 && rightHeap.Len() > 0 {
+		num1 := heap.Pop(leftHeap).(int)
+		num2 := heap.Pop(rightHeap).(int)
 
-		total += int(math.Abs((float64(num1 - num2))))
-
+		total += int(math.Abs(float64(num1 - num2)))
 	}
 
-	fmt.Println(total)
+	fmt.Printf("total distance: %d \n", total)
+
+	leftSlice := inputData.LeftSlice
+	rightMap := inputData.RightMap
+	similarityScore := 0
+	for _, left := range leftSlice {
+		frequency := rightMap[left]
+		similarityScore += left * frequency
+	}
+
+	fmt.Printf("similarity score: %d \n", similarityScore)
+
 }
 
-func readIntoHeaps(heap1 *IntHeap, heap2 *IntHeap) error {
+func readIntoHeaps() (InputData, error) {
+
+	heap1 := &IntHeap{}
+	heap2 := &IntHeap{}
+	heap.Init(heap1)
+	heap.Init(heap2)
+
+	var slice1 []int
+	map2 := make(map[int]int)
+
 	file, err := os.Open("input.txt")
 	if err != nil {
-		return errors.Wrap(err, "error opening file")
+		return InputData{}, errors.Wrap(err, "error opening file")
 	}
 	defer file.Close()
 
@@ -79,11 +104,19 @@ func readIntoHeaps(heap1 *IntHeap, heap2 *IntHeap) error {
 
 		heap.Push(heap1, num1)
 		heap.Push(heap2, num2)
+
+		slice1 = append(slice1, num1)
+		map2[num2]++
 	}
 
 	if err := scanner.Err(); err != nil {
-		return errors.Wrap(err, "error reading file")
+		return InputData{}, errors.Wrap(err, "error reading file")
 	}
 
-	return nil
+	return InputData{
+		LeftHeap:  heap1,
+		RightHeap: heap2,
+		LeftSlice: slice1,
+		RightMap:  map2,
+	}, nil
 }
