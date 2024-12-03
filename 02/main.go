@@ -7,12 +7,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
 func main() {
 
+	start := time.Now()
 	file, err := os.Open("input.txt")
 	if err != nil {
 		panic(err)
@@ -35,6 +37,7 @@ func main() {
 	}
 
 	fmt.Printf("Safe reports: %d\n", safeReports)
+	fmt.Printf("Execution time: %s\n", time.Since(start))
 
 }
 

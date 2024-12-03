@@ -1,4 +1,4 @@
-module advent2024-1
+module 01
 
 go 1.23
 
