@@ -14,10 +14,38 @@ func main() {
 	guardMap = readFile("input.txt")
 	i, j, direction := findStart()
 	walkGuard(i, j, direction)
-	printGuardMap()
 	paths := countWalkedPath()
-	fmt.Printf("Number of paths: %d\n", paths)
+	guardMap[i][j] = direction
+	searchForLoops(i, j, direction)
+	fmt.Printf("Number of xpaths: %d\n", paths)
+	fmt.Printf("Number of loops: %d\n", loopsFounds)
 	fmt.Printf("Execution time: %s\n", time.Since(start))
+}
+
+func searchForLoops(i, j int, direction string) {
+	for a, row := range guardMap {
+		for b, cell := range row {
+			ab := fmt.Sprintf("%d,%d", a, b)
+			ij := fmt.Sprintf("%d,%d", i, j)
+			if ab != ij && cell == "X" {
+				tmpMap := make([][]string, len(guardMap))
+				for z, zrow := range guardMap {
+					tmpMap[z] = make([]string, len(zrow))
+					copy(tmpMap[z], zrow)
+				}
+				guardMap[a][b] = "#"
+				if walkGuard(i, j, direction) {
+					loopsFounds++
+				}
+
+				for x, xrow := range tmpMap {
+					guardMap[x] = make([]string, len(xrow))
+					copy(guardMap[x], xrow)
+				}
+				visited = make(map[string]int)
+			}
+		}
+	}
 }
 func readFile(fileName string) [][]string {
 	file, _ := os.Open(fileName)
@@ -34,16 +62,23 @@ func readFile(fileName string) [][]string {
 	return guardMap
 }
 
-func walkGuard(i, j int, direction string) {
+var visited = make(map[string]int)
+var loopsFounds = 0
+
+func walkGuard(i, j int, direction string) bool {
+	if amILooping(i, j, direction) {
+		return true
+	}
 	guardMap[i][j] = "X"
+	visited[fmt.Sprintf("%d,%d,%s", i, j, direction)]++
 	if direction == "^" && i == 0 {
-		return
+		return false
 	} else if direction == ">" && j == len(guardMap[0])-1 {
-		return
+		return false
 	} else if direction == "v" && i == len(guardMap)-1 {
-		return
+		return false
 	} else if direction == "<" && j == 0 {
-		return
+		return false
 	}
 
 	var nextCell string
@@ -63,16 +98,16 @@ func walkGuard(i, j int, direction string) {
 	}
 	if direction == "^" {
 		guardMap[i-1][j] = "^"
-		walkGuard(i-1, j, direction)
+		return walkGuard(i-1, j, direction)
 	} else if direction == "v" {
 		guardMap[i+1][j] = "v"
-		walkGuard(i+1, j, direction)
+		return walkGuard(i+1, j, direction)
 	} else if direction == "<" {
 		guardMap[i][j-1] = "<"
-		walkGuard(i, j-1, direction)
+		return walkGuard(i, j-1, direction)
 	} else {
 		guardMap[i][j+1] = ">"
-		walkGuard(i, j+1, direction)
+		return walkGuard(i, j+1, direction)
 	}
 }
 
@@ -117,4 +152,11 @@ func countWalkedPath() int {
 		}
 	}
 	return paths
+}
+
+func amILooping(i, j int, direction string) bool {
+	if visited[fmt.Sprintf("%d,%d,%s", i, j, direction)] > 2 {
+		return true
+	}
+	return false
 }
